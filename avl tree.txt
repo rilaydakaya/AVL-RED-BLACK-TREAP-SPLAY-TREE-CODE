@@ -1,0 +1,186 @@
+#include<stdio.h>
+#include<stdlib.h>
+#include<stdbool.h>
+typedef struct Node
+{
+	int sayi;
+	struct Node* left;
+	struct Node* right;
+	int top;
+}Node;
+Node* dugumOlustur(int sayi)
+{
+	Node* node = (Node*)malloc(sizeof(Node));
+	node->sayi = sayi;
+	node->left = NULL;
+	node->right = NULL;
+	node->top = 1;
+	return(node);
+}
+Node* sagaDondur(Node* Y)
+{
+	Node* X = Y->left;
+	Node* T2 = X->right;
+	X->right = Y;
+	Y->left = T2;
+	Y->top =maksimum(top(Y->left), top(Y->right)) + 1;
+	X->top =maksimum(top(X->left), top(X->right)) + 1;
+	return X;
+}
+Node* solaDondur(Node* X)
+{
+	Node* Y = X->right;
+	Node* T2 = Y->left;
+	Y->left = X;
+	X->right = T2;
+	X->top =maksimum(top(X->left), top(X->right)) + 1;
+	Y->top =maksimum(top(Y->left), top(Y->right)) + 1;
+	return Y;
+}
+Node* ekle(Node* node, int sayi)
+{
+	if (node == NULL)
+		return(dugumOlustur(sayi));
+	if (sayi < node->sayi)
+		node->left = ekle(node->left, sayi);
+	else if (sayi > node->sayi)
+		node->right = ekle(node->right, sayi);
+	else
+		return node;
+	node->top = 1 +maksimum(top(node->left), top(node->right));
+	int balance = dengeAyar(node);
+	if (balance > 1 && sayi < node->left->sayi)
+		return sagaDondur(node);
+	if (balance < -1 && sayi > node->right->sayi)
+		return solaDondur(node);
+	if (balance > 1 && sayi > node->left->sayi)
+	{
+		node->left = solaDondur(node->left);
+		return sagaDondur(node);
+	}
+	if (balance < -1 && sayi < node->right->sayi)
+	{
+		node->right = sagaDondur(node->right);
+		return solaDondur(node);
+	}
+	return node;
+}
+int top(Node* J)
+{
+	if (J == NULL)
+		return 0;
+	return J->top;
+}
+int maksimum(int X, int Y)
+{
+	return (X > Y) ? X : Y;
+}
+int dengeAyar(Node* J)
+{
+	if (J == NULL)
+		return 0;
+	return top(J->left) - top(J->right);
+}
+
+Node* minimum(Node* node)
+{
+	Node* current = node;
+	while (current->left != NULL)
+		current = current->left;
+	return current;
+}
+Node* silme(Node* root, int sayi)
+{
+	if (root == NULL)
+		return root;
+	if (sayi < root->sayi)
+		root->left = silme(root->left, sayi);
+	else if (sayi > root->sayi)
+		root->right = silme(root->right, sayi);
+	else
+	{
+		if ((root->left == NULL) || (root->right == NULL))
+		{
+			Node* temp = root->left ? root->left :
+				root->right;
+			if (temp == NULL)
+			{
+				temp = root;
+				root = NULL;
+			}
+			else
+				*root = *temp;
+			free(temp);
+		}
+		else
+		{
+			Node* temp = minimum(root->right);
+			root->sayi = temp->sayi;
+			root->right = silme(root->right, temp->sayi);
+		}
+	}
+	if (root == NULL)
+	{
+		return root;
+	}
+	root->top = 1 +maksimum(top(root->left), top(root->right));
+	int balance = dengeAyar(root);
+	if (balance > 1 && dengeAyar(root->left) >= 0)
+		return sagaDondur(root);
+	if (balance > 1 && dengeAyar(root->left) < 0)
+	{
+		root->left = solaDondur(root->left);
+		return sagaDondur(root);
+	}
+	if (balance < -1 && dengeAyar(root->right) <= 0)
+	{
+		return solaDondur(root);
+	}
+	if (balance < -1 && dengeAyar(root->right) > 0)
+	{
+		root->right = sagaDondur(root->right);
+		return solaDondur(root);
+	}
+	return root;
+}
+void Search(Node* root)
+{
+	int X;
+	scanf_s("%d", &X);
+	if (root == NULL)
+		return false;
+	else if (root == X)
+		return true;
+	else if (root < X)
+		return Search(root->right, X);
+	return Search(root->left, X);
+	return false;
+}
+void preOrder(Node* root)
+{
+	if (root != NULL)
+	{
+		printf("%d ", root->sayi);
+		preOrder(root->left);
+		preOrder(root->right);
+	}
+}
+int main()
+{
+	int dizi[30], i;
+	for (i = 0; i < 30; i++)
+		dizi[i] = rand() % 100;
+	Node* root = NULL;
+	for (i = 0; i < 30; i++)
+		root = ekle(root, dizi[i]);
+	printf("AVL agaci: \n");
+	preOrder(root);
+	printf("\nSilmek istediginiz sayi:");
+	int silinecek;
+	scanf_s("%d", &silinecek);
+	root = silme(root, silinecek);
+	printf("\nSilinmis hali \n");
+	preOrder(root);
+	return 0;
+}
+

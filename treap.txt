@@ -1,0 +1,148 @@
+#include <iostream>
+#include <cstdlib>
+#include <ctime>
+using namespace std;
+struct TreapNode
+{
+    int veri;
+    int baslangıc;
+    TreapNode* sol, * sağ;
+    TreapNode(int veri)
+    {
+        this->veri = veri;
+        this->baslangıc = rand() % 100;
+        this->sol = this->sağ = nullptr;
+    }
+};
+void solaDondur(TreapNode*& root)
+{
+    TreapNode* X = root->sağ;
+    TreapNode* Y = root->sağ->sol;
+    X->sol = root;
+    root->sağ = Y;
+    root = X;
+}
+void sagaDondur(TreapNode*& root)
+{
+    TreapNode* P = root->sol;
+    TreapNode* Y = root->sol->sağ;
+    P->sağ = root;
+    root->sol = Y;
+    root = P;
+}
+void ekle(TreapNode*& root, int veri)
+{
+    if (root == nullptr)
+    {
+        root = new TreapNode(veri);
+        return;
+    }
+    if (veri < root->veri)
+    {
+        ekle(root->sol, veri);
+        if (root->sol != nullptr && root->sol->baslangıc > root->baslangıc) {
+           sagaDondur(root);
+        }
+    }
+
+    else {
+        ekle(root->sağ, veri);
+        if (root->sağ != nullptr && root->sağ->baslangıc > root->baslangıc) {
+            solaDondur(root);
+        }
+    }
+}
+bool arama(TreapNode* root, int key)
+{
+    if (root == nullptr) {
+        return false;
+    }
+    if (root->veri == key) {
+        return true;
+    }
+    if (key < root->veri) {
+        return arama(root->sol, key);
+    }
+    return arama(root->sağ, key);
+}
+void sil(TreapNode*& root, int key)
+{
+    if (root == nullptr) {
+        return;
+    }
+    if (key < root->veri) {
+        sil(root->sol, key);
+    }
+    else if (key > root->veri) {
+        sil(root->sağ, key);
+    }
+    else {
+        if (root->sol == nullptr && root->sağ == nullptr)
+        {
+            delete root;
+            root = nullptr;
+        }
+        else if (root->sol && root->sağ)
+        {
+            if (root->sol->baslangıc < root->sağ->baslangıc)
+            {
+                solaDondur(root);
+                sil(root->sol, key);
+            }
+            else {
+               sagaDondur(root);
+                sil(root->sağ, key);
+            }
+        }
+        else {
+            TreapNode* child = (root->sol) ? root->sol : root->sağ;
+            TreapNode* curr = root;
+            root = child;
+            delete curr;
+        }
+    }
+}
+void bastir(TreapNode* root, int space = 0, int mod = 10)
+{
+    if (root == nullptr) {
+        return;
+    }
+    space += mod;
+    bastir(root->sağ, space);
+    cout << endl;
+    for (int i = mod; i < space; i++)
+    {
+        cout << ' ';
+    }
+    cout << root->veri << "(" << root->baslangıc << ")\n";
+    cout << endl;
+    bastir(root->sol, space);
+}
+int main()
+{
+    int dizi[30];
+    int n = sizeof(dizi) / sizeof(int);
+    TreapNode* root = nullptr;
+    srand(time(nullptr));
+    for (int i = 0; i < n; i++)
+    {
+        dizi[i] = rand() % 99 + 1;
+    }
+    for (int i = 0; i < n; i++)
+    {
+        cout << dizi[i] << "\t";
+    }
+    for (int key : dizi) {
+        ekle(root, key);
+    }
+    cout << "\nOlusan treap:\n\n";
+    bastir(root);
+    int silinecek;
+    cout << "Silinecek: ";
+    cin >> silinecek;
+    cout << "\nSilinmis hal:\n\n";
+    sil(root, silinecek);
+    bastir(root);
+    return 0;
+}
+

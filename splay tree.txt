@@ -1,0 +1,200 @@
+#include <iostream>
+#include <cstdio>
+#include <cstdlib>
+using namespace std;
+struct ş
+{
+    int m;
+    ş* sol;
+    ş* sağ;
+};
+class SplayTree
+{
+public:
+    ş* RR_Rotate(ş* a2)
+    {
+        ş* m1 = a2->sol;
+        a2->sol = m1->sağ;
+        m1->sağ = a2;
+        return m1;
+    }
+    ş* LL_Rotate(ş* a2)
+    {
+        ş* m1 = a2->sağ;
+        a2->sağ = m1->sol;
+        m1->sol = a2;
+        return m1;
+    }
+    ş* Splay(int eleman, ş* kök)
+    {
+        if (!kök)
+            return NULL;
+        ş header;
+        header.sol = header.sağ = NULL;
+        ş* LeftTreeMax = &header;
+        ş* RightTreeMin = &header;
+        while (1)
+        {
+            if (eleman < kök->m)
+            {
+                if (!kök->sol)
+                    break;
+                if (eleman < kök->sol->m)
+                {
+                    kök = RR_Rotate(kök);
+                    if (!kök->sol)
+                        break;
+                }
+                RightTreeMin->sol = kök;
+                RightTreeMin = RightTreeMin->sol;
+                kök = kök->sol;
+                RightTreeMin->sol = NULL;
+            }
+            else if (eleman > kök->m)
+            {
+                if (!kök->sağ)
+                    break;
+                if (eleman > kök->sağ->m)
+                {
+                    kök = LL_Rotate(kök);
+                    if (!kök->sağ)
+                        break;
+                }
+                LeftTreeMax->sağ = kök;
+                LeftTreeMax = LeftTreeMax->sağ;
+                kök = kök->sağ;
+                LeftTreeMax->sağ = NULL;
+            }
+            else
+                break;
+        }
+        LeftTreeMax->sağ = kök->sol;
+        RightTreeMin->sol = kök->sağ;
+        kök->sol = header.sağ;
+        kök->sağ = header.sol;
+        return kök;
+    }
+    ş* New_Node(int eleman)
+    {
+        ş* p_node = new ş;
+        if (!p_node)
+        {
+            fprintf(stderr, "Out of memory!\n");
+            exit(1);
+        }
+        p_node->m = eleman;
+        p_node->sol = p_node->sağ = NULL;
+        return p_node;
+    }
+    ş* Insert(int eleman, ş* kök)
+    {
+        static ş* p_node = NULL;
+        if (!p_node)
+            p_node = New_Node(eleman);
+        else
+            p_node->m = eleman;
+        if (!kök)
+        {
+            kök = p_node;
+            p_node = NULL;
+            return kök;
+        }
+        kök = Splay(eleman, kök);
+        if (eleman < kök->m)
+        {
+            p_node->sol = kök->sol;
+            p_node->sağ = kök;
+            kök->sol = NULL;
+            kök = p_node;
+        }
+        else if (eleman > kök->m)
+        {
+            p_node->sağ = kök->sağ;
+            p_node->sol = kök;
+            kök->sağ = NULL;
+            kök = p_node;
+        }
+        else
+            return kök;
+        p_node = NULL;
+        return kök;
+    }
+    ş* Delete(int eleman, ş* kök)
+    {
+        ş* temp;
+        if (!kök)
+            return NULL;
+        kök = Splay(eleman, kök);
+        if (eleman != kök->m)
+            return kök;
+        else
+        {
+            if (!kök->sol)
+            {
+                temp = kök;
+                kök = kök->sağ;
+            }
+            else
+            {
+                temp = kök;
+                kök = Splay(eleman, kök->sol);
+                kök->sağ = temp->sağ;
+            }
+            free(temp);
+            return kök;
+        }
+    }
+    ş* Seasağ(int eleman, ş* kök)
+    {
+        return Splay(eleman, kök);
+    }
+    void InOrder(ş* kök)
+    {
+        if (kök)
+        {
+            InOrder(kök->sol);
+            cout << "eleman: " << kök->m;
+            if (kök->sol)
+                cout << " | left child: " << kök->sol->m;
+            if (kök->sağ)
+                cout << " | right child: " << kök->sağ->m;
+            cout << "\n";
+            InOrder(kök->sağ);
+        }
+    };
+};
+int main()
+{
+    SplayTree st;
+    ş* kök;
+    kök = NULL;
+    st.InOrder(kök);
+    int i, c;
+    int dizi[30];
+    srand(time(nullptr));
+    for (int i = 0; i < 30; i++)
+    {
+        dizi[i] = rand() % 99 + 1;
+    }
+    for (int i = 0; i < 30; i++)
+    {
+        cout << dizi[i] << "\t";
+    }
+    for (int i = 0; i < 30; i++)
+    {
+        kök = st.Insert(dizi[i], kök);
+    }
+    cout << "\n";
+    st.InOrder(kök);
+    cout << "Silinecek eleman: ";
+    cin >> i;
+    kök = st.Delete(i, kök);
+    cout << "\nSilindikten sonra: " << i << endl;
+    st.InOrder(kök);
+    cout << "Aranacak: ";
+    cin >> i;
+    kök = st.Seasağ(i, kök);
+    st.InOrder(kök);
+    return 0;
+
+}

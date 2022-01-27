@@ -1,0 +1,320 @@
+#include <stdio.h>
+#include <stdlib.h>
+enum renkNode {
+    RED,
+    BLACK
+};
+typedef struct kırmızısiyahNode {
+    int veri, renk;
+    struct kırmızısiyahNode* connection[2];
+}kırmızısiyahNode;
+kırmızısiyahNode* root = NULL;
+kırmızısiyahNode* NodeOlustur(int veri) {
+    kırmızısiyahNode* Node;
+    Node = (kırmızısiyahNode*)malloc(sizeof(kırmızısiyahNode));
+    Node->veri = veri;
+    Node->renk = RED;
+    Node->connection[0] = Node->connection[1] = NULL;
+    return Node;
+}
+void ekle(int veri) {
+    kırmızısiyahNode* yığın[30], * ptr, * Node, * aPtr, * bPtr;
+    int dir[98], ht = 0, index;
+    ptr = root;
+    if (!root) {
+        root = NodeOlustur(veri);
+        return;
+    }
+    yığın[ht] = root;
+    dir[ht++] = 0;
+    while (ptr != NULL) {
+        index = (veri - ptr->veri) > 0 ? 1 : 0;
+        yığın[ht] = ptr;
+        ptr = ptr->connection[index];
+        dir[ht++] = index;
+    }
+    yığın[ht - 1]->connection[index] = Node = NodeOlustur(veri);
+    while ((ht >= 3) && (yığın[ht - 1]->renk == RED)) {
+        if (dir[ht - 2] == 0) {
+            bPtr = yığın[ht - 2]->connection[1];
+            if (bPtr != NULL && bPtr->renk == RED) {
+                yığın[ht - 2]->renk = RED;
+                yığın[ht - 1]->renk = bPtr->renk = BLACK;
+                ht = ht - 2;
+            }
+            else {
+                if (dir[ht - 1] == 0) {
+                    bPtr = yığın[ht - 1];
+                }
+                else {
+                    aPtr = yığın[ht - 1];
+                    bPtr = aPtr->connection[1];
+                    aPtr->connection[1] = bPtr->connection[0];
+                    bPtr->connection[0] = aPtr;
+                    yığın[ht - 2]->connection[0] = bPtr;
+                }
+                aPtr = yığın[ht - 2];
+                aPtr->renk = RED;
+                bPtr->renk = BLACK;
+                aPtr->connection[0] = bPtr->connection[1];
+                bPtr->connection[1] = aPtr;
+                if (aPtr == root) {
+                    root = bPtr;
+                }
+                else {
+                    yığın[ht - 3]->connection[dir[ht - 3]] = bPtr;
+                }
+                break;
+            }
+        }
+        else {
+            bPtr = yığın[ht - 2]->connection[0];
+            if ((bPtr != NULL) && (bPtr->renk == RED)) {
+                yığın[ht - 2]->renk = RED;
+                yığın[ht - 1]->renk = bPtr->renk = BLACK;
+                ht = ht - 2;
+            }
+            else {
+                if (dir[ht - 1] == 1) {
+                    bPtr = yığın[ht - 1];
+                }
+                else {
+                    aPtr = yığın[ht - 1];
+                    bPtr = aPtr->connection[0];
+                    aPtr->connection[0] = bPtr->connection[1];
+                    bPtr->connection[1] = aPtr;
+                    yığın[ht - 2]->connection[1] = bPtr;
+                }
+                aPtr = yığın[ht - 2];
+                bPtr->renk = BLACK;
+                aPtr->renk = RED;
+                aPtr->connection[1] = bPtr->connection[0];
+                bPtr->connection[0] = aPtr;
+                if (aPtr == root) {
+                    root = bPtr;
+                }
+                else {
+                    yığın[ht - 3]->connection[dir[ht - 3]] = bPtr;
+                }
+                break;
+            }
+        }
+    }
+    root->renk = BLACK;
+}
+void sil(int veri) {
+    kırmızısiyahNode* yığın[30], * ptr, * aPtr, * bPtr;
+    kırmızısiyahNode* pPtr, * qPtr, * rPtr;
+    int dir[30], ht = 0, fk, i;
+    enum renkNode renk;
+
+    if (!root) {
+        printf("Agac yok\n");
+        return;
+    }
+    ptr = root;
+    while (ptr != NULL) {
+        if ((veri - ptr->veri) == 0)
+            break;
+        fk = (veri - ptr->veri) > 0 ? 1 : 0;
+        yığın[ht] = ptr;
+        dir[ht++] = fk;
+        ptr = ptr->connection[fk];
+    }
+    if (ptr->connection[1] == NULL) {
+        if ((ptr == root) && (ptr->connection[0] == NULL)) {
+            free(ptr);
+            root = NULL;
+        }
+        else if (ptr == root)
+        {
+            root = ptr->connection[0];
+            free(ptr);
+        }
+        else
+        {
+            yığın[ht - 1]->connection[dir[ht - 1]] = ptr->connection[0];
+        }
+    }
+    else {
+        aPtr = ptr->connection[1];
+        if (aPtr->connection[0] == NULL) {
+            aPtr->connection[0] = ptr->connection[0];
+            renk = aPtr->renk;
+            aPtr->renk = ptr->renk;
+            ptr->renk = renk;
+
+            if (ptr == root) {
+                root = aPtr;
+            }
+            else {
+                yığın[ht - 1]->connection[dir[ht - 1]] = aPtr;
+            }
+            dir[ht] = 1;
+            yığın[ht++] = aPtr;
+        }
+        else {
+            i = ht++;
+            while (1) {
+                dir[ht] = 0;
+                yığın[ht++] = aPtr;
+                bPtr = aPtr->connection[0];
+                if (!bPtr->connection[0])
+                    break;
+                aPtr = bPtr;
+            }
+            dir[i] = 1;
+            yığın[i] = bPtr;
+            if (i > 0)
+                yığın[i - 1]->connection[dir[i - 1]] = bPtr;
+            bPtr->connection[0] = ptr->connection[0];
+            aPtr->connection[0] = bPtr->connection[1];
+            bPtr->connection[1] = ptr->connection[1];
+
+            if (ptr == root) {
+                root = bPtr;
+            }
+            renk = bPtr->renk;
+            bPtr->renk = ptr->renk;
+            ptr->renk = renk;
+        }
+    }
+    if (ht < 1)
+        return;
+    if (ptr->renk == BLACK) {
+        while (1) {
+            pPtr = yığın[ht - 1]->connection[dir[ht - 1]];
+            if (pPtr && pPtr->renk == RED) {
+                pPtr->renk = BLACK;
+                break;
+            }
+            if (ht < 2)
+                break;
+            if (dir[ht - 2] == 0) {
+                rPtr = yığın[ht - 1]->connection[1];
+                if (!rPtr)
+                    break;
+                if (rPtr->renk == RED) {
+                    yığın[ht - 1]->renk = RED;
+                    rPtr->renk = BLACK;
+                    yığın[ht - 1]->connection[1] = rPtr->connection[0];
+                    rPtr->connection[0] = yığın[ht - 1];
+                    if (yığın[ht - 1] == root) {
+                        root = rPtr;
+                    }
+                    else {
+                        yığın[ht - 2]->connection[dir[ht - 2]] = rPtr;
+                    }
+                    dir[ht] = 0;
+                    yığın[ht] = yığın[ht - 1];
+                    yığın[ht - 1] = rPtr;
+                    ht++;
+                    rPtr = yığın[ht - 1]->connection[1];
+                }
+                if ((!rPtr->connection[0] || rPtr->connection[0]->renk == BLACK) &&
+                    (!rPtr->connection[1] || rPtr->connection[1]->renk == BLACK)) {
+                    rPtr->renk = RED;
+                }
+                else
+                {
+                    if (!rPtr->connection[1] || rPtr->connection[1]->renk == BLACK) {
+                        qPtr = rPtr->connection[0];
+                        rPtr->renk = RED;
+                        qPtr->renk = BLACK;
+                        rPtr->connection[0] = qPtr->connection[1];
+                        qPtr->connection[1] = rPtr;
+                        rPtr = yığın[ht - 1]->connection[1] = qPtr;
+                    }
+                    rPtr->renk = yığın[ht - 1]->renk;
+                    yığın[ht - 1]->renk = BLACK;
+                    rPtr->connection[1]->renk = BLACK;
+                    yığın[ht - 1]->connection[1] = rPtr->connection[0];
+                    rPtr->connection[0] = yığın[ht - 1];
+                    if (yığın[ht - 1] == root) {
+                        root = rPtr;
+                    }
+                    else {
+                        yığın[ht - 2]->connection[dir[ht - 2]] = rPtr;
+                    }
+                    break;
+                }
+            }
+            else
+            {
+                rPtr = yığın[ht - 1]->connection[0];
+                if (!rPtr)
+                    break;
+                if (rPtr->renk == RED) {
+                    yığın[ht - 1]->renk = RED;
+                    rPtr->renk = BLACK;
+                    yığın[ht - 1]->connection[0] = rPtr->connection[1];
+                    rPtr->connection[1] = yığın[ht - 1];
+                    if (yığın[ht - 1] == root) {
+                        root = rPtr;
+                    }
+                    else {
+                        yığın[ht - 2]->connection[dir[ht - 2]] = rPtr;
+                    }
+                    dir[ht] = 1;
+                    yığın[ht] = yığın[ht - 1];
+                    yığın[ht - 1] = rPtr;
+                    ht++;
+                    rPtr = yığın[ht - 1]->connection[0];
+                }
+                if ((!rPtr->connection[0] || rPtr->connection[0]->renk == BLACK) &&
+                    (!rPtr->connection[1] || rPtr->connection[1]->renk == BLACK)) {
+                    rPtr->renk = RED;
+                }
+                else {
+                    if (!rPtr->connection[0] || rPtr->connection[0]->renk == BLACK) {
+                        qPtr = rPtr->connection[1];
+                        rPtr->renk = RED;
+                        qPtr->renk = BLACK;
+                        rPtr->connection[1] = qPtr->connection[0];
+                        qPtr->connection[0] = rPtr;
+                        rPtr = yığın[ht - 1]->connection[0] = qPtr;
+                    }
+                    rPtr->renk = yığın[ht - 1]->renk;
+                    yığın[ht - 1]->renk = BLACK;
+                    rPtr->connection[0]->renk = BLACK;
+                    yığın[ht - 1]->connection[0] = rPtr->connection[1];
+                    rPtr->connection[1] = yığın[ht - 1];
+                    if (yığın[ht - 1] == root) {
+                        root = rPtr;
+                    }
+                    else {
+                        yığın[ht - 2]->connection[dir[ht - 2]] = rPtr;
+                    }
+                    break;
+                }
+            }
+            ht--;
+        }
+    }
+}
+void inorder(kırmızısiyahNode* node) {
+    if (node) {
+        inorder(node->connection[0]);
+        printf("%d  ", node->veri);
+        inorder(node->connection[1]);
+    }
+    return;
+}
+int main()
+{
+    int veri;
+    int dizi[30], i;
+    for (i = 0; i < 30; i++)
+        dizi[i] = rand() % 100;
+    for (i = 0; i < 30; i++)
+        ekle(dizi[i]);
+    for (i = 0; i < 30; i++)
+    {
+        printf("%d  ", dizi[i]);
+    }
+    printf("\nSilmek istediginiz eleman:");
+    scanf_s("%d", &veri);
+    sil(veri);
+    inorder(root);
+    return 0;
+}
